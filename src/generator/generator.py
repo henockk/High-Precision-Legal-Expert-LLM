@@ -41,3 +41,39 @@ def generate_answers(questions, retriever):
         q_a_pair = format_qa_pair(q,answer)
         q_a_pairs = q_a_pairs + "\n---\n"+  q_a_pair
     return q_a_pairs
+
+
+def create_query_generator():
+    template = """You are a helpful assistant that generates multiple search queries based on a single input query. \n
+    Generate multiple search queries related to: {question} \n
+    Output (4 queries):"""
+    prompt_rag_fusion = ChatPromptTemplate.from_template(template)
+    return (
+        prompt_rag_fusion 
+        | ChatOpenAI(temperature=0)
+        | StrOutputParser() 
+        | (lambda x: x.split("\n"))
+    )
+
+def create_final_rag_chain(retriever):
+    from operator import itemgetter
+    from langchain_core.runnables import RunnablePassthrough
+
+    template = """Answer the following question based on this context:
+
+    {context}
+
+    Question: {question}
+    """
+
+    prompt = ChatPromptTemplate.from_template(template)
+    llm = ChatOpenAI(temperature=0, model_name="gpt-4")
+
+    final_rag_chain = (
+        {"context": retriever, "question": itemgetter("question")}
+        | prompt
+        | llm
+        | StrOutputParser()
+    )
+    return final_rag_chain
+
