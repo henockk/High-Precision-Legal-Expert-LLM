@@ -20,10 +20,18 @@ def load_docx_document(file_path):
         full_text.append(para.text)
     return '\n'.join(full_text)
 
+
+
 def create_retriever(doc_path):
-    docx_text = load_docx_document(doc_path)
-    docs = [Document(page_content=docx_text)]
-    text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=300, chunk_overlap=50)
+    doc_text = load_docx_document(doc_path)
+    docs = [Document(page_content=doc_text)]
+
+    text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+        chunk_size=300, chunk_overlap=50
+    )
     splits = text_splitter.split_documents(docs)
-    vectorstore = Chroma.from_documents(documents=splits, embedding=OpenAIEmbeddings())
+
+    vectorstore = Chroma.from_documents(
+        documents=splits, embedding=OpenAIEmbeddings()
+    )
     return vectorstore.as_retriever()
